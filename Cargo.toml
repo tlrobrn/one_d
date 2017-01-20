@@ -1,0 +1,14 @@
+[package]
+name = "one_d"
+version = "0.1.0"
+authors = ["Taylor O'Brien <obrien.taylorm@gmail.com>"]
+
+[[bin]]
+name = "oned"
+
+[dependencies]
+piston = "0.27"
+piston2d-graphics = "0.19"
+pistoncore-glutin_window = "0.33"
+piston2d-opengl_graphics = "0.37"
+rand = "0.3"
