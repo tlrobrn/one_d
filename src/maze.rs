@@ -15,6 +15,9 @@ pub struct Maze {
     width: usize,
     height: usize,
     spaces: Vec<MazeSpace>,
+    goal_x: usize,
+    goal_y: usize,
+    goal_distance: usize,
 }
 
 pub struct MazeIterator<'a> {
@@ -104,6 +107,9 @@ impl Maze {
             width: width_with_spaces,
             height: height_with_spaces,
             spaces: vec![MazeSpace::Open; size],
+            goal_x: 0,
+            goal_y: 0,
+            goal_distance: 0,
         };
 
         let mut dsets = DisjointSets::new(size);
@@ -152,7 +158,11 @@ impl Maze {
                 let i = x + y * self.width;
                 let is_wall = (x % 2) == 1 || (y % 2) == 1;
 
-                self.spaces[i] = if is_wall { MazeSpace::Wall } else { MazeSpace::Open };
+                self.spaces[i] = if is_wall {
+                    MazeSpace::Wall
+                } else {
+                    MazeSpace::Open
+                };
                 if !is_wall {
                     east.push(i);
                     south.push(i);
@@ -185,8 +195,63 @@ impl Maze {
         (index % self.width, index / self.width)
     }
 
-    fn solve(&mut self) {
+    fn index_for(&self, x: usize, y: usize) -> usize {
+        x + y * self.width
+    }
 
+    fn solve(&mut self) {
+        let mut visited = vec![false; self.spaces.len()];
+        self.dfs(&mut visited, 0, 0, 0);
+        let index = self.index_for(self.goal_x, self.goal_y);
+        self.spaces[index] = MazeSpace::Goal;
+    }
+
+    fn dfs(&mut self, mut visited: &mut [bool], x: usize, y: usize, current_length: usize) {
+        let index = self.index_for(x, y);
+        visited[index] = true;
+
+        // left neighbor
+        if x > 0 {
+            let neighbor = self.index_for(x - 1, y);
+            if !visited[neighbor] && self.spaces[neighbor] != MazeSpace::Wall {
+                self.dfs(&mut visited, x - 1, y, current_length + 1);
+            }
+        }
+
+        // right neighbor
+        if x < self.width - 1 {
+            let neighbor = self.index_for(x + 1, y);
+            if !visited[neighbor] && self.spaces[neighbor] != MazeSpace::Wall {
+                self.dfs(&mut visited, x + 1, y, current_length + 1);
+            }
+        }
+
+        // up neighbor
+        if y > 0 {
+            let neighbor = self.index_for(x, y - 1);
+            if !visited[neighbor] && self.spaces[neighbor] != MazeSpace::Wall {
+                self.dfs(&mut visited, x, y - 1, current_length + 1);
+            }
+        }
+
+        // down neighbor
+        if y < self.height - 1 {
+            let neighbor = self.index_for(x, y + 1);
+            if !visited[neighbor] && self.spaces[neighbor] != MazeSpace::Wall {
+                self.dfs(&mut visited, x, y + 1, current_length + 1);
+            }
+        }
+
+        // set max_length if appropriate
+        if (current_length > self.goal_distance) ||
+           (current_length == self.goal_distance && y > self.goal_y) ||
+           (current_length == self.goal_distance && y == self.goal_y && x < self.goal_x) {
+            self.goal_distance = current_length;
+            self.goal_x = x;
+            self.goal_y = y;
+        }
+
+        visited[index] = false;
     }
 }
 

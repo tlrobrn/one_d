@@ -83,7 +83,7 @@ fn main() {
         .build()
         .unwrap();
 
-    let mut app = App::new(opengl, 5, 5);
+    let mut app = App::new(opengl, 13, 13);
 
     let mut events = window.events();
     while let Some(e) = events.next(&mut window) {
