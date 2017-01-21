@@ -3,7 +3,11 @@ extern crate graphics;
 extern crate glutin_window;
 extern crate opengl_graphics;
 extern crate one_d;
+extern crate rustc_serialize;
+extern crate docopt;
 
+use std::{cmp, env};
+use docopt::Docopt;
 use piston::window::WindowSettings;
 use piston::event_loop::*;
 use piston::input::*;
@@ -44,7 +48,7 @@ impl App {
         const BLUE: [f32; 4] = [0.0, 0.0, 1.0, 0.8];
 
         let width = args.width as f64;
-        let square_size = width / (self.maze.width() as f64);
+        let square_size = width / (cmp::max(self.maze.width(), self.maze.height()) as f64);
 
         let square = rectangle::square(0.0, 0.0, square_size);
         let maze = &self.maze;
@@ -136,20 +140,51 @@ impl App {
     }
 }
 
-fn main() {
-    let opengl = OpenGL::V3_2;
-    let maze_size = 5;
-    let window_width = 640;
-    let window_height = window_width / (maze_size * 2 - 1);
+const USAGE: &'static str = "
+OneD Maze
 
-    // Create an Glutin window.
-    let mut window: Window = WindowSettings::new("oned", [window_width, window_height])
+Usage:
+  oned
+  oned <size>
+  oned <width> <height>
+
+Options:
+  -h --help     Show this screen.
+";
+
+#[derive(RustcDecodable, Debug)]
+struct Args {
+    arg_size: usize,
+    arg_width: usize,
+    arg_height: usize,
+}
+
+fn main() {
+    let argv: Vec<String> = env::args().collect();
+    let args: Args = Docopt::new(USAGE)
+        .and_then(|d| d.argv(argv.into_iter()).decode())
+        .unwrap_or_else(|e| e.exit());
+
+    let (maze_width, maze_height) = match args {
+        Args { arg_size: size, arg_width: w, arg_height: h } if size == 0 && w == 0 && h == 0 => {
+            (5, 5)
+        }
+        Args { arg_size: size, arg_width: _, arg_height: _ } if size != 0 => (size, size),
+        Args { arg_size: _, arg_width: w, arg_height: h } => (w, h),
+    };
+
+    let opengl = OpenGL::V3_2;
+    let window_width = 640;
+    let max_maze_width = cmp::max(maze_width, maze_height) * 2 - 1;
+    let window_height = window_width / max_maze_width;
+
+    let mut window: Window = WindowSettings::new("oned", [window_width as u32, window_height as u32])
         .opengl(opengl)
         .exit_on_esc(true)
         .build()
         .unwrap();
 
-    let mut app = App::new(opengl, maze_size as usize, maze_size as usize);
+    let mut app = App::new(opengl, maze_width, maze_height);
 
     println!("{}", app.maze);
 
