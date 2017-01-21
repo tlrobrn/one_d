@@ -125,6 +125,17 @@ impl Maze {
         maze
     }
 
+    pub fn is_valid_space(&self, x: usize, y: usize) -> bool {
+        let index = self.index_for(x, y);
+        index < self.spaces.len() && self.spaces[index] != MazeSpace::Wall && x < self.width &&
+        y < self.height
+    }
+
+    pub fn is_goal(&self, x: usize, y: usize) -> bool {
+        let index = self.index_for(x, y);
+        self.spaces[index] == MazeSpace::Goal
+    }
+
     pub fn width(&self) -> usize {
         self.width
     }
